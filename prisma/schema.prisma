@@ -1,0 +1,521 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+enum ApprovalAuthority {
+  NONE
+  COMMANDER
+  QUARTER_MASTER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum PersonnelStatus {
+  ACTIVE
+  ON_LEAVE
+  INACTIVE
+  TRANSFERRED
+  RETIRED
+  SUSPENDED
+}
+
+enum LeaveRequestStatus {
+  DRAFT
+  PENDING_REVIEW
+  UNDER_REVIEW
+  RETURNED_FOR_CORRECTION
+  RECOMMENDED
+  PENDING_FINAL_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELLED
+  ON_LEAVE
+  COMPLETED
+  OVERDUE
+}
+
+enum ReviewDecision {
+  RECOMMEND
+  RETURN_FOR_CORRECTION
+  REJECT
+}
+
+enum ApprovalDecision {
+  APPROVE
+  REJECT
+  RETURN_FOR_CORRECTION
+}
+
+enum LeaveReturnStatus {
+  NOT_STARTED
+  ON_LEAVE
+  RETURNED
+  OVERDUE
+}
+
+enum EventAudienceType {
+  ALL
+  UNIT
+  SECTION
+  PERSONNEL
+}
+
+enum EventType {
+  TRAINING
+  MEETING
+  EXAM
+  PARADE
+  HOLIDAY
+  PROGRAM
+  OTHER
+}
+
+enum NotificationType {
+  LEAVE_SUBMITTED
+  LEAVE_UNDER_REVIEW
+  LEAVE_RETURNED
+  LEAVE_RECOMMENDED
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  LEAVE_STARTING
+  RETURN_DUE
+  RETURN_OVERDUE
+  EVENT_CREATED
+  SYSTEM
+}
+
+// ------------------------------------------------------
+// MODELS
+// ------------------------------------------------------
+
+model User {
+  id                String            @id @default(cuid())
+  email             String            @unique
+  passwordHash      String
+  role              UserRole
+  approvalAuthority ApprovalAuthority @default(NONE)
+  status            UserStatus        @default(ACTIVE)
+  lastLoginAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  personnel            Personnel?
+  sessions             Session[]
+  assignedModerators   ModeratorAssignment[]    @relation("ModeratorAssignments")
+  createdLeaveRequests LeaveRequest[]           @relation("LeaveCreatedBy")
+  leaveRequests        LeaveRequest[]           @relation("LeaveApplicant")
+  reviews              LeaveReview[]
+  approvals            LeaveApproval[]
+  leaveReturns         LeaveReturn[]            @relation("MarkedReturnedByUser")
+  notifications        Notification[]           @relation("NotificationRecipient")
+  actedNotifications   Notification[]           @relation("NotificationActor")
+  createdEvents        Event[]                  @relation("EventCreator")
+  auditLogs            AuditLog[]               @relation("AuditLogActor")
+  balanceAdjustments   LeaveBalanceAdjustment[] @relation("AdjustmentCreatedBy")
+  passwordResetTokens  PasswordResetToken[]
+  systemSettings       SystemSetting[]          @relation("SettingUpdatedBy")
+
+  @@index([role])
+  @@index([status])
+  @@index([approvalAuthority])
+}
+
+model Personnel {
+  id              String          @id @default(cuid())
+  userId          String?         @unique
+  serviceId       String          @unique
+  fullName        String
+  photoUrl        String?
+  rank            String
+  phone           String?
+  email           String?
+  bloodGroup      String?
+  joiningDate     DateTime?
+  postingDate     DateTime?
+  currentPosting  String?
+  previousPosting String?
+  supervisorName  String?
+  status          PersonnelStatus @default(ACTIVE)
+  unitId          String
+  sectionId       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  unit           Unit            @relation(fields: [unitId], references: [id])
+  section        Section?        @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  leaveRequests  LeaveRequest[]
+  leaveBalances  LeaveBalance[]
+  leaveReturns   LeaveReturn[]
+  eventAudiences EventAudience[] @relation("PersonnelEventAudience")
+
+  @@index([unitId])
+  @@index([sectionId])
+  @@index([fullName])
+  @@index([status])
+}
+
+model Unit {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections       Section[]
+  personnel      Personnel[]
+  assignments    ModeratorAssignment[]
+  eventAudiences EventAudience[]       @relation("UnitEventAudience")
+
+  @@index([isActive])
+}
+
+model Section {
+  id          String   @id @default(cuid())
+  unitId      String
+  name        String
+  code        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  unit           Unit                  @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  personnel      Personnel[]
+  assignments    ModeratorAssignment[]
+  eventAudiences EventAudience[]       @relation("SectionEventAudience")
+
+  @@unique([unitId, name])
+  @@unique([unitId, code])
+  @@index([unitId])
+}
+
+model ModeratorAssignment {
+  id          String    @id @default(cuid())
+  moderatorId String
+  unitId      String?
+  sectionId   String?
+  isActive    Boolean   @default(true)
+  assignedAt  DateTime  @default(now())
+  revokedAt   DateTime?
+
+  moderator User     @relation("ModeratorAssignments", fields: [moderatorId], references: [id], onDelete: Cascade)
+  unit      Unit?    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  section   Section? @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@index([moderatorId, isActive])
+  @@index([unitId, isActive])
+  @@index([sectionId, isActive])
+}
+
+model LeaveType {
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  code               String   @unique
+  description        String?
+  isActive           Boolean  @default(true)
+  requiresAttachment Boolean  @default(false)
+  allowHalfDay       Boolean  @default(false)
+  allowBackdated     Boolean  @default(false)
+  defaultAllowance   Decimal? @db.Decimal(5, 2)
+  minDays            Decimal? @db.Decimal(5, 2)
+  maxDays            Decimal? @db.Decimal(5, 2)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  requests LeaveRequest[]
+  balances LeaveBalance[]
+  policies LeavePolicy[]
+}
+
+model LeavePolicy {
+  id                 String    @id @default(cuid())
+  leaveTypeId        String
+  effectiveFrom      DateTime
+  effectiveTo        DateTime?
+  allocationDays     Decimal   @db.Decimal(5, 2)
+  carryForwardLimit  Decimal?  @db.Decimal(5, 2)
+  maxConsecutiveDays Decimal?  @db.Decimal(5, 2)
+  requiresApproval   Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+
+  @@index([leaveTypeId, effectiveFrom])
+}
+
+model LeaveBalance {
+  id             String   @id @default(cuid())
+  personnelId    String
+  leaveTypeId    String
+  year           Int
+  allocatedDays  Decimal  @default(0) @db.Decimal(5, 2)
+  carryForward   Decimal  @default(0) @db.Decimal(5, 2)
+  adjustmentDays Decimal  @default(0) @db.Decimal(5, 2)
+  usedDays       Decimal  @default(0) @db.Decimal(5, 2)
+  reservedDays   Decimal  @default(0) @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  personnel   Personnel                @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  leaveType   LeaveType                @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  adjustments LeaveBalanceAdjustment[]
+
+  @@unique([personnelId, leaveTypeId, year])
+  @@index([personnelId, year])
+}
+
+model LeaveBalanceAdjustment {
+  id          String   @id @default(cuid())
+  balanceId   String
+  amount      Decimal  @db.Decimal(5, 2)
+  reason      String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  balance   LeaveBalance @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("AdjustmentCreatedBy", fields: [createdById], references: [id])
+
+  @@index([balanceId])
+}
+
+model LeaveRequest {
+  id                    String             @id @default(cuid())
+  requestNumber         String             @unique
+  personnelId           String
+  applicantId           String?
+  createdById           String
+  leaveTypeId           String
+  startDate             DateTime
+  endDate               DateTime
+  totalDays             Decimal            @db.Decimal(5, 2)
+  reason                String
+  contactDuringLeave    String?
+  addressDuringLeave    String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  status                LeaveRequestStatus @default(PENDING_REVIEW)
+  submittedAt           DateTime?
+  recommendedAt         DateTime?
+  finalApprovedAt       DateTime?
+  rejectedAt            DateTime?
+  correctionCount       Int                @default(0)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  personnel    Personnel         @relation(fields: [personnelId], references: [id])
+  applicant    User?             @relation("LeaveApplicant", fields: [applicantId], references: [id], onDelete: SetNull)
+  createdBy    User              @relation("LeaveCreatedBy", fields: [createdById], references: [id])
+  leaveType    LeaveType         @relation(fields: [leaveTypeId], references: [id])
+  attachments  LeaveAttachment[]
+  reviews      LeaveReview[]
+  approvals    LeaveApproval[]
+  returnRecord LeaveReturn?
+
+  @@index([personnelId, startDate, endDate])
+  @@index([status])
+  @@index([leaveTypeId])
+  @@index([submittedAt])
+}
+
+model LeaveAttachment {
+  id             String   @id @default(cuid())
+  leaveRequestId String
+  fileName       String
+  fileUrl        String
+  mimeType       String
+  fileSize       Int
+  uploadedById   String?
+  createdAt      DateTime @default(now())
+
+  leaveRequest LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+
+  @@index([leaveRequestId])
+}
+
+model LeaveReview {
+  id             String         @id @default(cuid())
+  leaveRequestId String
+  reviewerId     String
+  decision       ReviewDecision
+  remarks        String?
+  createdAt      DateTime       @default(now())
+
+  leaveRequest LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+  reviewer     User         @relation(fields: [reviewerId], references: [id])
+
+  @@index([leaveRequestId, createdAt])
+}
+
+model LeaveApproval {
+  id             String            @id @default(cuid())
+  leaveRequestId String
+  approverId     String
+  authority      ApprovalAuthority
+  decision       ApprovalDecision
+  remarks        String?
+  approvedAt     DateTime          @default(now())
+
+  leaveRequest LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+  approver     User         @relation(fields: [approverId], references: [id])
+
+  @@index([leaveRequestId, approvedAt])
+}
+
+model LeaveReturn {
+  id                 String            @id @default(cuid())
+  leaveRequestId     String            @unique
+  personnelId        String
+  expectedReturnDate DateTime
+  actualReturnDate   DateTime?
+  status             LeaveReturnStatus @default(NOT_STARTED)
+  remarks            String?
+  markedReturnedById String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  leaveRequest     LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+  personnel        Personnel    @relation(fields: [personnelId], references: [id])
+  markedReturnedBy User?        @relation("MarkedReturnedByUser", fields: [markedReturnedById], references: [id], onDelete: SetNull)
+
+  @@index([expectedReturnDate, status])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        EventType
+  startAt     DateTime
+  endAt       DateTime
+  location    String?
+  createdById String
+  isPublished Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy User            @relation("EventCreator", fields: [createdById], references: [id])
+  audiences EventAudience[]
+
+  @@index([startAt, endAt])
+}
+
+model EventAudience {
+  id           String            @id @default(cuid())
+  eventId      String
+  audienceType EventAudienceType
+  unitId       String?
+  sectionId    String?
+  personnelId  String?
+
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  unit      Unit?      @relation("UnitEventAudience", fields: [unitId], references: [id], onDelete: Cascade)
+  section   Section?   @relation("SectionEventAudience", fields: [sectionId], references: [id], onDelete: Cascade)
+  personnel Personnel? @relation("PersonnelEventAudience", fields: [personnelId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([unitId])
+  @@index([sectionId])
+  @@index([personnelId])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  recipientId String
+  actorId     String?
+  type        NotificationType
+  title       String
+  message     String
+  entityType  String?
+  entityId    String?
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  createdAt   DateTime         @default(now())
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, isRead, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  reason     String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  updatedBy User? @relation("SettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+}
