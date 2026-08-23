@@ -88,6 +88,21 @@
 - [x] `GET /api/audit-logs` — System audit logs (Admin only)
 - [x] `GET /api/dashboard/stats` — Role-based summary cards & metrics
 
+## 🎨 UI/UX Design System & Standards
+
+- **Strict 4px Radius Rule:** All buttons, cards, inputs, textareas, modals, badges, and tables follow `rounded-[4px]` (`--radius: 4px`) for a crisp, disciplined military/executive look.
+- **Premium Icon Standard:** `lucide-react` only (no cheap, mismatched icon sets).
+- **Prebuilt & Reusable Architecture:** Clean, headless-compatible components with zero ad-hoc styling or hardcoding:
+  - `components/ui/button.tsx` — CVA variants (`default`, `destructive`, `success`, `outline`, `secondary`, `ghost`, `link`)
+  - `components/ui/input.tsx` & `components/ui/textarea.tsx` — 4px focus ring with error messaging
+  - `components/ui/card.tsx` — Modular Header, Title, Description, Content, Footer
+  - `components/ui/badge.tsx` — Semantic badges with 4px radius
+  - `components/ui/status-badge.tsx` — Centralized status mapper with Lucide icons for all 11 lifecycle states
+  - `components/ui/stat-card.tsx` — Reusable KPI card with Lucide icons
+  - `components/ui/table.tsx` — Standardized data table with 4px border
+  - `components/ui/modal.tsx` — Clean dialog modal with backdrop blur
+  - `lib/utils.ts` — `cn` class merger & date/time formatters
+
 ---
 
 ## 🔒 Security & Architecture Rules Followed
