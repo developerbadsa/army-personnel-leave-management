@@ -51,6 +51,45 @@ export async function GET() {
         }),
       ]);
 
+      // Calculate Monthly Trends (Last 6 Months)
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+
+      const [recentLeaves, leaveTypes] = await Promise.all([
+        prisma.leaveRequest.findMany({
+          where: { startDate: { gte: sixMonthsAgo } },
+          select: { startDate: true, totalDays: true, leaveTypeId: true, status: true },
+        }),
+        prisma.leaveType.findMany({
+          select: { id: true, name: true, code: true },
+        }),
+      ]);
+
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthlyTrends = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const m = d.getMonth();
+        const y = d.getFullYear();
+        const count = recentLeaves.filter(
+          (l) => l.startDate.getMonth() === m && l.startDate.getFullYear() === y
+        ).length;
+        monthlyTrends.push({ month: `${monthNames[m]} ${y}`, count });
+      }
+
+      const leaveTypeMap = new Map(leaveTypes.map((t) => [t.id, t.name]));
+      const distributionMap = new Map<string, number>();
+      for (const l of recentLeaves) {
+        const name = leaveTypeMap.get(l.leaveTypeId) || "Other";
+        distributionMap.set(name, (distributionMap.get(name) || 0) + 1);
+      }
+      const leaveTypeDistribution = Array.from(distributionMap.entries()).map(([name, value]) => ({
+        name,
+        value,
+      }));
+
       return NextResponse.json({
         success: true,
         data: {
@@ -63,6 +102,8 @@ export async function GET() {
             awaitingFinalApprovalCount,
             overdueReturnsCount,
             upcomingEventsCount,
+            monthlyTrends,
+            leaveTypeDistribution,
           },
         },
       });

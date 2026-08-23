@@ -20,6 +20,17 @@ import {
   FileText,
   Bell,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -93,6 +104,10 @@ function DashboardContent({
 }
 
 function AdminDashboard({ data }: { data: Record<string, unknown> }) {
+  const monthlyTrends = (data.monthlyTrends || []) as Array<{ month: string; count: number }>;
+  const distribution = (data.leaveTypeDistribution || []) as Array<{ name: string; value: number }>;
+  const COLORS = ["#0f172a", "#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#f43f5e"];
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -141,6 +156,80 @@ function AdminDashboard({ data }: { data: Record<string, unknown> }) {
           variant="info"
         />
       </div>
+
+      {/* Analytics Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="p-4 border-b border-slate-100">
+            <CardTitle className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
+              Monthly Leave Trends (Last 6 Months)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 h-[220px]">
+            {monthlyTrends.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center pt-16">No monthly data yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyTrends}>
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#64748b" }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 10, fill: "#64748b" }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0f172a",
+                      borderRadius: "4px",
+                      border: "none",
+                      color: "#fff",
+                      fontSize: "11px",
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#0f172a" radius={[4, 4, 0, 0]} name="Applications" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="p-4 border-b border-slate-100">
+            <CardTitle className="text-xs font-semibold text-slate-900 uppercase tracking-wider">
+              Leave Distribution by Category
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 h-[220px]">
+            {distribution.length === 0 ? (
+              <p className="text-xs text-slate-400 text-center pt-16">No leave data yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={distribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {distribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#0f172a",
+                      borderRadius: "4px",
+                      border: "none",
+                      color: "#fff",
+                      fontSize: "11px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <QuickLinks />
         <SystemStatus />

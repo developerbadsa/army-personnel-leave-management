@@ -54,6 +54,7 @@ const adminNav: NavItem[] = [
     icon: FileText,
     children: [
       { label: "Leave Report", href: "/reports/leave" },
+      { label: "Individual Statements", href: "/reports/individual" },
       { label: "Personnel Report", href: "/reports/personnel" },
       { label: "Pending", href: "/reports/pending" },
       { label: "Approved", href: "/reports/approved" },

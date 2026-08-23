@@ -16,6 +16,16 @@ const applyLeaveSchema = z.object({
   addressDuringLeave: z.string().optional().nullable(),
   emergencyContactName: z.string().optional().nullable(),
   emergencyContactPhone: z.string().optional().nullable(),
+  attachments: z
+    .array(
+      z.object({
+        fileName: z.string(),
+        fileUrl: z.string(),
+        mimeType: z.string(),
+        fileSize: z.number(),
+      })
+    )
+    .optional(),
 });
 
 function calculateDays(start: Date, end: Date): number {
@@ -199,10 +209,24 @@ export async function POST(req: NextRequest) {
           emergencyContactPhone,
           status: LeaveRequestStatus.PENDING_REVIEW,
           submittedAt: new Date(),
+          ...(result.data.attachments && result.data.attachments.length > 0
+            ? {
+                attachments: {
+                  create: result.data.attachments.map((att) => ({
+                    fileName: att.fileName,
+                    fileUrl: att.fileUrl,
+                    mimeType: att.mimeType,
+                    fileSize: att.fileSize,
+                    uploadedById: user.id,
+                  })),
+                },
+              }
+            : {}),
         },
         include: {
           personnel: { select: { fullName: true, serviceId: true, unit: true, section: true } },
           leaveType: true,
+          attachments: true,
         },
       }),
       prisma.leaveBalance.update({

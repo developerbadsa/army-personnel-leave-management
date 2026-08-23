@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { PageHeader } from "@/components/ui/page-header";
@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchApi, apiPost } from "@/lib/api";
-import { AlertCircle, CheckCircle2, Calculator } from "lucide-react";
+import { AlertCircle, CheckCircle2, Calculator, UploadCloud, FileCheck, X, Loader2 } from "lucide-react";
 
 interface LeaveType {
   id: string;
@@ -27,6 +27,13 @@ interface Personnel {
   fullName: string;
 }
 
+interface AttachmentItem {
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  fileSize: number;
+}
+
 function calculateDays(start: string, end: string): number {
   if (!start || !end) return 0;
   const s = new Date(start);
@@ -37,8 +44,12 @@ function calculateDays(start: string, end: string): number {
 
 export default function ApplyLeavePage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+
   const [form, setForm] = useState({
     personnelId: "",
     leaveTypeId: "",
@@ -66,14 +77,55 @@ export default function ApplyLeavePage() {
   const totalDays = calculateDays(form.startDate, form.endDate);
   const selectedType = leaveTypes.find((t) => t.id === form.leaveTypeId);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError("");
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || "Failed to upload file");
+      }
+      setAttachments((prev) => [...prev, data.data]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "File upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (selectedType?.requiresAttachment && attachments.length === 0) {
+      setError(`Attachment (Medical Certificate/Documents) is required for ${selectedType.name}`);
+      return;
+    }
+
     setSaving(true);
     try {
-      await apiPost("/api/leaves/apply", form);
+      await apiPost("/api/leaves/apply", {
+        ...form,
+        attachments: attachments.length > 0 ? attachments : undefined,
+      });
       setSuccess(true);
-      setTimeout(() => router.push("/leaves/my"), 2000);
+      setTimeout(() => router.push("/leaves/my"), 1500);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to submit");
     } finally {
@@ -95,7 +147,7 @@ export default function ApplyLeavePage() {
 
   return (
     <DashboardLayout>
-      <PageHeader title="Apply for Leave" description="Submit a new leave application" />
+      <PageHeader title="Apply for Leave" description="Submit a new leave application with attachment support" />
 
       <div className="max-w-2xl">
         <Card>
@@ -139,7 +191,9 @@ export default function ApplyLeavePage() {
                 <div className="p-2 bg-slate-50 border border-slate-200 rounded-[4px] text-[10px] text-slate-600 flex gap-4">
                   {selectedType.minDays && <span>Min: {selectedType.minDays} day(s)</span>}
                   {selectedType.maxDays && <span>Max: {selectedType.maxDays} day(s)</span>}
-                  {selectedType.requiresAttachment && <span className="text-amber-700">Attachment required</span>}
+                  {selectedType.requiresAttachment && (
+                    <span className="text-amber-700 font-semibold">⚠️ Attachment (Medical/Official) Required</span>
+                  )}
                 </div>
               )}
 
@@ -176,9 +230,63 @@ export default function ApplyLeavePage() {
                 <Textarea
                   value={form.reason}
                   onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                  placeholder="Reason for leave..."
+                  placeholder="State the reason for leave..."
                   rows={3}
                 />
+              </div>
+
+              {/* File Attachment Upload */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">Attachments (Medical Certificates, Orders)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1 text-slate-600" />
+                    ) : (
+                      <UploadCloud className="w-3.5 h-3.5 mr-1 text-slate-600" />
+                    )}
+                    {uploading ? "Uploading..." : "Upload File (PDF / Image)"}
+                  </Button>
+                  <span className="text-[10px] text-slate-400">Max 5MB (PDF, PNG, JPG)</span>
+                </div>
+
+                {attachments.length > 0 && (
+                  <div className="space-y-1 mt-2">
+                    {attachments.map((att, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-[4px]"
+                      >
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <FileCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span className="text-xs font-medium text-slate-900 truncate">{att.fileName}</span>
+                          <span className="text-[10px] text-slate-400">({Math.round(att.fileSize / 1024)} KB)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(idx)}
+                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

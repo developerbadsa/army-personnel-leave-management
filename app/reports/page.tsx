@@ -11,6 +11,7 @@ import {
 
 const reportCards = [
   { title: "Leave Report", description: "Full leave report with filters", href: "/reports/leave", icon: FileText, color: "bg-slate-100 text-slate-700" },
+  { title: "Individual Statements", description: "Detailed annual leave statement by personnel", href: "/reports/individual", icon: Users, color: "bg-indigo-50 text-indigo-700" },
   { title: "Personnel Report", description: "Personnel breakdown by unit/status", href: "/reports/personnel", icon: Users, color: "bg-blue-50 text-blue-700" },
   { title: "Pending Requests", description: "Leave requests awaiting action", href: "/reports/pending", icon: Clock, color: "bg-amber-50 text-amber-700" },
   { title: "Approved Requests", description: "All approved leave records", href: "/reports/approved", icon: CheckCircle2, color: "bg-emerald-50 text-emerald-700" },
