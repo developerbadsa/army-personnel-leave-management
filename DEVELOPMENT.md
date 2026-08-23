@@ -88,10 +88,13 @@
 - [x] `GET /api/audit-logs` — System audit logs (Admin only)
 - [x] `GET /api/dashboard/stats` — Role-based summary cards & metrics
 
-## 🎨 UI/UX Design System & Standards
+## 🎨 UI/UX Design System & Standards (Master Reference)
+
+> Complete standalone design system guide is documented in **[`UI_DESIGN_RULES_STANDARD.md`](./UI_DESIGN_RULES_STANDARD.md)** for universal reuse across this and other projects.
 
 - **Strict 4px Radius Rule:** All buttons, cards, inputs, textareas, modals, badges, and tables follow `rounded-[4px]` (`--radius: 4px`) for a crisp, disciplined military/executive look.
 - **Premium Icon Standard:** `lucide-react` only (no cheap, mismatched icon sets).
+- **Human-Crafted & Glanceable UX:** Minimal text, big numbers on metric cards, 1-click decisions, zero jargon.
 - **Prebuilt & Reusable Architecture:** Clean, headless-compatible components with zero ad-hoc styling or hardcoding:
   - `components/ui/button.tsx` — CVA variants (`default`, `destructive`, `success`, `outline`, `secondary`, `ghost`, `link`)
   - `components/ui/input.tsx` & `components/ui/textarea.tsx` — 4px focus ring with error messaging
