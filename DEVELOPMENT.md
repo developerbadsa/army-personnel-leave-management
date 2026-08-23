@@ -10,15 +10,15 @@
 
 | Phase | Days | Focus Area | Status |
 |-------|------|------------|--------|
-| Phase 1 | 1-2 | Infrastructure & Setup | ⬜ Pending |
-| Phase 2 | 3-5 | Auth & Core Layout | ⬜ Pending |
-| Phase 3 | 6-9 | Personnel & Organization | ⬜ Pending |
-| Phase 4 | 10-15 | Leave Workflow (Core) | ⬜ Pending |
-| Phase 5 | 16-17 | Calendar & Events | ⬜ Pending |
-| Phase 6 | 18-20 | Reports & Export | ⬜ Pending |
-| Phase 7 | 21-22 | Notifications & Audit | ⬜ Pending |
-| Phase 8 | 23-24 | Dashboard | ⬜ Pending |
-| Phase 9 | 25-27 | Polish & Testing | ⬜ Pending |
+| Phase 1 | 1-2 | Infrastructure & Setup | 🟢 **Completed** |
+| Phase 2 | 3-5 | Auth & Core Layout | 🟢 **Completed** |
+| Phase 3 | 6-9 | Personnel & Organization | 🟢 **Completed** |
+| Phase 4 | 10-15 | Leave Workflow (Core) | 🟢 **Completed** |
+| Phase 5 | 16-17 | Calendar & Events | 🟢 **Completed** |
+| Phase 6 | 18-20 | Reports & Export (PDF) | 🟢 **Completed** |
+| Phase 7 | 21-22 | Notifications & Audit | 🟢 **Completed** |
+| Phase 8 | 23-24 | Dashboard & Charts | 🟢 **Completed** |
+| Phase 9 | 25-27 | Polish & Testing | 🟡 **In Progress** |
 | Phase 10 | 28-30 | Deployment & Handover | ⬜ Pending |
 
 ---
