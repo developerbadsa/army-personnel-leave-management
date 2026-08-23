@@ -18,6 +18,35 @@ const updateLeaveTypeSchema = z.object({
   maxDays: z.number().positive().optional().nullable(),
 });
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { errorResponse } = await authenticateRequest();
+    if (errorResponse) return errorResponse;
+
+    const { id } = await params;
+    const leaveType = await prisma.leaveType.findUnique({
+      where: { id },
+      include: {
+        policies: {
+          orderBy: { effectiveFrom: "desc" },
+        },
+      },
+    });
+
+    if (!leaveType) {
+      return NextResponse.json({ success: false, error: "Leave type not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: leaveType });
+  } catch (error) {
+    console.error("GET Leave Type Error:", error);
+    return NextResponse.json({ success: false, error: "Failed to fetch leave type" }, { status: 500 });
+  }
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -63,5 +92,75 @@ export async function PUT(
   } catch (error) {
     console.error("PUT Leave Type Error:", error);
     return NextResponse.json({ success: false, error: "Failed to update leave type" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { user, errorResponse } = await authenticateRequest();
+    if (errorResponse) return errorResponse;
+
+    if (!hasRole(user, [UserRole.ADMIN])) {
+      return NextResponse.json({ success: false, error: "Forbidden: Admin required" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const existing = await prisma.leaveType.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "Leave type not found" }, { status: 404 });
+    }
+
+    // Check for existing leave requests using this type
+    const requestCount = await prisma.leaveRequest.count({
+      where: {
+        leaveTypeId: id,
+        status: {
+          notIn: ["REJECTED", "CANCELLED"],
+        },
+      },
+    });
+
+    if (requestCount > 0) {
+      // Soft-delete: deactivate instead
+      const updated = await prisma.leaveType.update({
+        where: { id },
+        data: { isActive: false },
+      });
+
+      await createAuditLog({
+        actorId: user.id,
+        action: "LEAVE_TYPE_DEACTIVATED",
+        entityType: "LeaveType",
+        entityId: id,
+        oldValue: { isActive: existing.isActive },
+        newValue: { isActive: false },
+        reason: `Deactivated instead of deleting — ${requestCount} active leave request(s) reference this type`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Leave type deactivated (still referenced by existing requests)",
+        data: updated,
+      });
+    }
+
+    // No active references - hard delete
+    await prisma.leaveType.delete({ where: { id } });
+
+    await createAuditLog({
+      actorId: user.id,
+      action: "LEAVE_TYPE_DELETED",
+      entityType: "LeaveType",
+      entityId: id,
+      oldValue: existing as unknown as import("@prisma/client").Prisma.InputJsonValue,
+    });
+
+    return NextResponse.json({ success: true, message: "Leave type deleted successfully" });
+  } catch (error) {
+    console.error("DELETE Leave Type Error:", error);
+    return NextResponse.json({ success: false, error: "Failed to delete leave type" }, { status: 500 });
   }
 }

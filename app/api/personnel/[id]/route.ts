@@ -132,3 +132,61 @@ export async function PUT(
     return NextResponse.json({ success: false, error: "Failed to update personnel" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { user, errorResponse } = await authenticateRequest();
+    if (errorResponse) return errorResponse;
+
+    if (!hasRole(user, [UserRole.ADMIN])) {
+      return NextResponse.json({ success: false, error: "Forbidden: Admin required" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const existing = await prisma.personnel.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ success: false, error: "Personnel not found" }, { status: 404 });
+    }
+
+    // Check for active leave requests
+    const activeLeaves = await prisma.leaveRequest.count({
+      where: {
+        personnelId: id,
+        status: {
+          in: ["PENDING_REVIEW", "UNDER_REVIEW", "PENDING_FINAL_APPROVAL", "APPROVED", "ON_LEAVE"],
+        },
+      },
+    });
+
+    if (activeLeaves > 0) {
+      return NextResponse.json(
+        { success: false, error: `Cannot archive personnel with ${activeLeaves} active leave request(s). Resolve them first.` },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.personnel.update({
+      where: { id },
+      data: { status: PersonnelStatus.INACTIVE },
+      select: { id: true, serviceId: true, fullName: true, status: true },
+    });
+
+    await createAuditLog({
+      actorId: user.id,
+      action: "PERSONNEL_ARCHIVED",
+      entityType: "Personnel",
+      entityId: id,
+      oldValue: { status: existing.status },
+      newValue: { status: "INACTIVE" },
+      reason: "Admin archived personnel record",
+    });
+
+    return NextResponse.json({ success: true, data: updated });
+  } catch (error) {
+    console.error("DELETE Personnel Error:", error);
+    return NextResponse.json({ success: false, error: "Failed to archive personnel" }, { status: 500 });
+  }
+}
