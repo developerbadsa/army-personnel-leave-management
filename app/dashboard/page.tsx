@@ -27,20 +27,27 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+
     const fetchStats = async () => {
       try {
         const res = await fetchApi("/api/dashboard/stats");
-        if (res.success && res.data) {
+        if (isMounted && res.success && res.data) {
           setStats(res.data as Record<string, unknown>);
         }
       } catch {
         // silently fail
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchStats();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   if (!user) return null;
 

@@ -473,7 +473,7 @@ npm install react-hook-form @hookform/resolvers zod
 ## ⚡ Quick Reference — What's Done vs What's Left
 
 ### ✅ DONE (Backend)
-- [x] 91 API endpoints
+- [x] 91 API endpoints (62 route files)
 - [x] Prisma schema (20 models)
 - [x] Auth system (JWT + cookies)
 - [x] RBAC (3 roles + approval authority)
@@ -481,12 +481,38 @@ npm install react-hook-form @hookform/resolvers zod
 - [x] Notification system
 - [x] Seed script
 
-### ⬜ LEFT (Frontend + Deploy)
-- [ ] Middleware (route protection)
-- [ ] ~25 frontend pages
-- [ ] ~15 reusable components
-- [ ] 6 report pages + export
-- [ ] Dashboard (3 role variants)
-- [ ] Calendar view
+### ✅ DONE (Frontend)
+- [x] Middleware (route protection)
+- [x] 29 frontend pages
+- [x] 17 reusable components
+- [x] 6 report pages + CSV export
+- [x] Dashboard (3 role variants with charts)
+- [x] Calendar view (monthly grid)
+- [x] Auth flow (login, forgot/reset password)
+- [x] Personnel list + detail + assigned view
+- [x] Units & Sections management
+- [x] User management (create, role, authority, disable, reset password)
+- [x] Leave types management
+- [x] Leave balances view
+- [x] Apply leave form
+- [x] Leave detail with approval timeline
+- [x] My leave requests
+- [x] Leave returns tracking
+- [x] Events list + create
+- [x] Notifications center with mark-read
+- [x] Audit logs viewer
+- [x] Settings management
+- [x] Profile page
+- [x] Auth provider + API client lib
+- [x] Typecheck: ✅ ZERO errors
+
+### ⬜ LEFT (Polish + Deploy)
+- [ ] PDF export integration
+- [ ] File upload for leave attachments
+- [ ] Advanced charts (recharts)
+- [ ] Leave policies management page
+- [ ] Personnel create/edit form page
+- [ ] Individual report page
+- [ ] Responsive design testing
 - [ ] Production build + deploy
 - [ ] Testing + handover

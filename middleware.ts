@@ -1,27 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_ROUTES = ["/login", "/forgot-password", "/reset-password"];
-const API_AUTH_PREFIX = "/api/auth";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const sessionToken = req.cookies.get("army_session")?.value;
 
-  // Allow API auth routes (login, logout, forgot-password, etc.)
-  if (pathname.startsWith(API_AUTH_PREFIX)) {
+  // 1. Allow all API routes to be handled by Route Handlers (they return proper JSON 401/403)
+  if (pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
-  // Allow public pages
-  if (PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
-    // If logged in and trying to access login, redirect to dashboard
-    if (sessionToken && pathname === "/login") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-    return NextResponse.next();
-  }
-
-  // Allow static files and Next.js internals
+  // 2. Allow static files, favicon, Next.js internals
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
@@ -30,10 +20,25 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protected routes: require session
+  // 3. Handle Public Pages (/login, /forgot-password, /reset-password)
+  const isPublicPage = PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
+  );
+
+  if (isPublicPage) {
+    // If already logged in and visiting /login, redirect to /dashboard
+    if (sessionToken && pathname === "/login") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  // 4. Protected Page Routes: require sessionToken
   if (!sessionToken) {
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("redirect", pathname);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
@@ -42,7 +47,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all routes except static files
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

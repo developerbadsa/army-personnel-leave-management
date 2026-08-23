@@ -13,21 +13,26 @@ export function Header() {
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    let isMounted = true;
+
     const fetchCount = async () => {
       try {
         const res = await fetchApi<{ unreadCount: number }>("/api/notifications/unread-count");
-        if (res.success && res.data) {
+        if (isMounted && res.success && res.data) {
           setUnreadCount(res.data.unreadCount);
         }
       } catch {
-        // silently fail
+        // silently ignore
       }
     };
+
     fetchCount();
-    const interval = setInterval(fetchCount, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, [user]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -55,7 +60,7 @@ export function Header() {
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <div className="w-7 h-7 rounded-[4px] bg-slate-200 flex items-center justify-center">
               <User className="w-3.5 h-3.5 text-slate-600" />
@@ -92,7 +97,7 @@ export function Header() {
                     setShowMenu(false);
                     logout();
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Sign Out
