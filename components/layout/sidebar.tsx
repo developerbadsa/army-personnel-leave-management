@@ -140,17 +140,17 @@ export function Sidebar() {
                 )}
               </button>
               {isGroupOpen && (
-                <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-slate-200 pl-3">
+                <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l-2 border-slate-200/80 pl-2.5">
                   {item.children.map((child) => (
                     <Link
                       key={child.href}
                       href={child.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "flex items-center px-3 py-1.5 text-sm rounded-[4px] transition-colors",
+                        "flex items-center px-2.5 py-1.5 text-xs rounded-md transition-all",
                         isActive(child.href)
-                          ? "bg-slate-900 text-white font-medium"
-                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          ? "bg-slate-900 text-white font-semibold shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
                       )}
                     >
                       {child.label}
@@ -168,10 +168,10 @@ export function Sidebar() {
             href={item.href!}
             onClick={() => setMobileOpen(false)}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-[4px] transition-colors",
+              "flex items-center gap-3 px-3 py-2 text-xs font-semibold rounded-md transition-all",
               isActive(item.href!)
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
             )}
           >
             <item.icon className="w-4 h-4 shrink-0" />

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserRole, ApprovalAuthority, UserStatus } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
+import { emailUsers, emailActiveAdmins, appBaseUrl } from "@/lib/email";
 import { z } from "zod";
 
 const createUserSchema = z.object({
@@ -131,6 +132,35 @@ export async function POST(req: NextRequest) {
       entityId: newUser.id,
       newValue: newUser as unknown as import("@prisma/client").Prisma.InputJsonValue,
       reason: "Admin created new user",
+    });
+
+    // Email the new user their login credentials
+    await emailUsers({
+      userIds: [newUser.id],
+      subject: "Your account has been created",
+      heading: "Welcome to the Army Leave Management System",
+      paragraphs: [
+        `A login account has been created for you.`,
+        `Email: ${newUser.email}`,
+        `Temporary password: ${password}`,
+        `Role: ${role}`,
+        "Please sign in and change your password after your first login.",
+      ],
+      ctaLabel: "Sign In",
+      ctaUrl: `${appBaseUrl()}/login`,
+    });
+
+    // Email other active admins so they know a new account exists
+    await emailActiveAdmins({
+      excludeUserIds: [user.id, newUser.id],
+      subject: `New account created: ${newUser.email}`,
+      heading: "New User Account Created",
+      paragraphs: [
+        `A new ${role} account was created: ${newUser.email}`,
+        "The account owner has been emailed their login credentials.",
+      ],
+      ctaLabel: "View Users",
+      ctaUrl: `${appBaseUrl()}/users`,
     });
 
     return NextResponse.json({ success: true, data: newUser }, { status: 201 });

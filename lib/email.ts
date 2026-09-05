@@ -178,6 +178,47 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Email every active admin (excluding excludeUserIds).
+ */
+export async function emailActiveAdmins(params: {
+  excludeUserIds?: string[];
+  subject: string;
+  heading: string;
+  paragraphs: string[];
+  ctaLabel?: string;
+  ctaUrl?: string;
+}): Promise<void> {
+  const excluded = params.excludeUserIds?.filter(Boolean) ?? [];
+
+  if (!isEmailEnabled()) {
+    console.log(`[mail:disabled] would-email active admins subject="${params.subject}"`);
+    return;
+  }
+
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN", status: "ACTIVE" },
+      select: { id: true, email: true },
+    });
+    for (const admin of admins) {
+      if (excluded.includes(admin.id)) continue;
+      await sendEmail({
+        to: admin.email,
+        subject: params.subject,
+        html: emailLayout({
+          heading: params.heading,
+          paragraphs: params.paragraphs,
+          ctaLabel: params.ctaLabel,
+          ctaUrl: params.ctaUrl,
+        }),
+      });
+    }
+  } catch (error) {
+    console.error("[mail:error] failed to resolve admin recipients:", error);
+  }
+}
+
 /** Human-friendly labels for review/approval decisions. */
 export function decisionLabel(decision: string): string {
   switch (decision) {

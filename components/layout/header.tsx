@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-provider";
 import { fetchApi } from "@/lib/api";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Bell, LogOut, User, ChevronDown } from "lucide-react";
+import { Bell, LogOut, User, ChevronDown, ShieldCheck, UserCheck } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -36,81 +36,103 @@ export function Header() {
 
   if (!user) return null;
 
+  const displayName = user.personnel?.fullName || user.email.split("@")[0];
+  const userPhoto = user.personnel?.photoUrl;
+
   return (
-    <header className="h-14 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-6 shrink-0 sticky top-0 z-30">
-      {/* Left: spacer for mobile sidebar toggle */}
+    <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-sm flex items-center justify-between px-4 lg:px-7 shrink-0 sticky top-0 z-30 shadow-xs">
+      {/* Left: Mobile spacer */}
       <div className="w-10 lg:hidden" />
 
       {/* Right */}
-      <div className="flex items-center gap-3 ml-auto">
+      <div className="flex items-center gap-3.5 ml-auto">
         {/* Notifications */}
         <Link
           href="/notifications"
-          className="relative p-2 rounded-[4px] text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+          aria-label="Notifications"
+          className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
         >
-          <Bell className="w-4.5 h-4.5" />
+          <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute 1.5 top-1.5 right-1.5 w-4 h-4 bg-rose-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Link>
 
-        {/* User menu */}
+        {/* User Pill Dropdown */}
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] hover:bg-slate-50 transition-colors cursor-pointer"
+            className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-lg border border-slate-200/80 bg-slate-50/50 hover:bg-slate-100/80 hover:border-slate-300 transition-all cursor-pointer shadow-xs"
           >
-            <div className="w-7 h-7 rounded-[4px] bg-slate-200 flex items-center justify-center overflow-hidden border border-slate-300">
-              {user.personnel?.photoUrl ? (
+            {/* Avatar */}
+            <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center overflow-hidden shrink-0">
+              {userPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={user.personnel.photoUrl}
-                  alt={user.personnel.fullName || "Avatar"}
+                  src={userPhoto}
+                  alt={displayName}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User className="w-3.5 h-3.5 text-slate-600" />
+                <User className="w-4 h-4 text-slate-600" />
               )}
             </div>
-            <div className="hidden sm:flex flex-col items-start">
-              <span className="text-xs font-medium text-slate-900 leading-tight">
-                {user.personnel?.fullName || user.email}
+
+            {/* Name & Role */}
+            <div className="hidden sm:flex flex-col items-start leading-tight text-left">
+              <span className="text-xs font-bold text-slate-800 tracking-tight">
+                {displayName}
               </span>
-              <div className="flex items-center gap-1">
-                <StatusBadge status={user.role} className="text-[9px] py-0 px-1" />
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="inline-flex items-center text-[10px] font-semibold text-slate-600 bg-slate-200/70 px-1.5 py-0.2 rounded">
+                  {user.role}
+                </span>
                 {user.approvalAuthority !== "NONE" && (
-                  <StatusBadge status={user.approvalAuthority} className="text-[9px] py-0 px-1" />
+                  <span className="inline-flex items-center text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">
+                    {user.approvalAuthority}
+                  </span>
                 )}
               </div>
             </div>
-            <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block" />
+
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block ml-0.5" />
           </button>
 
+          {/* Menu Dropdown */}
           {showMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-[4px] shadow-lg z-50 py-1">
-                <Link
-                  href="/profile"
-                  onClick={() => setShowMenu(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <User className="w-3.5 h-3.5" />
-                  My Profile
-                </Link>
-                <hr className="border-slate-100 my-1" />
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    logout();
-                  }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Sign Out
-                </button>
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="px-3.5 py-2 border-b border-slate-100">
+                  <p className="text-xs font-bold text-slate-800 truncate">{displayName}</p>
+                  <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
+                </div>
+
+                <div className="py-1">
+                  <Link
+                    href="/profile"
+                    onClick={() => setShowMenu(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-slate-400" />
+                    My Profile &amp; Settings
+                  </Link>
+                </div>
+
+                <div className="border-t border-slate-100 pt-1">
+                  <button
+                    onClick={() => {
+                      setShowMenu(false);
+                      logout();
+                    }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="w-4 h-4 text-rose-500" />
+                    Sign Out
+                  </button>
+                </div>
               </div>
             </>
           )}

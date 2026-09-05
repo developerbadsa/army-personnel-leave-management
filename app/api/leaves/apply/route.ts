@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole, LeaveRequestStatus, NotificationType, Prisma } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
-import { emailUsers, appBaseUrl } from "@/lib/email";
+import { emailUsers, emailActiveAdmins, appBaseUrl } from "@/lib/email";
 import { z } from "zod";
 
 const applyLeaveSchema = z.object({
@@ -274,9 +274,34 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Confirmation to the applicant
+    await emailUsers({
+      userIds: [user.id],
+      subject: `Leave application received — #${requestNumber}`,
+      heading: "Leave application submitted successfully",
+      paragraphs: [
+        `Your leave application #${requestNumber} (${totalDays} day(s)) has been submitted and is now pending review.`,
+        "You will be notified by email once a moderator or approver takes action on it.",
+      ],
+      ctaLabel: "View My Requests",
+      ctaUrl: `${appBaseUrl()}/leaves/my`,
+    });
+
     // Email assigned moderators
     await emailUsers({
       userIds: moderatorIds,
+      subject: `New Leave Application #${requestNumber}`,
+      heading: "New Leave Application",
+      paragraphs: [
+        `${personnel.fullName} (${personnel.serviceId}) submitted a leave application of ${totalDays} day(s).`,
+        `Request Number: ${requestNumber}`,
+      ],
+      ctaLabel: "Review Application",
+      ctaUrl: `${appBaseUrl()}/leaves/${leaveRequest.id}`,
+    });
+
+    // Email all active admins
+    await emailActiveAdmins({
       subject: `New Leave Application #${requestNumber}`,
       heading: "New Leave Application",
       paragraphs: [

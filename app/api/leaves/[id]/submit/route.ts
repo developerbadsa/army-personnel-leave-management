@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole, LeaveRequestStatus, NotificationType } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
-import { emailUsers, appBaseUrl } from "@/lib/email";
+import { emailUsers, emailActiveAdmins, appBaseUrl } from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
@@ -89,9 +89,33 @@ export async function POST(
       });
     }
 
+    // Confirmation to the applicant
+    await emailUsers({
+      userIds: [user.id],
+      subject: `Leave application submitted — #${leaveRequest.requestNumber}`,
+      heading: "Leave application submitted successfully",
+      paragraphs: [
+        `Your leave application #${leaveRequest.requestNumber} has been submitted and is now pending review.`,
+        "You will be notified by email once a moderator or approver takes action on it.",
+      ],
+      ctaLabel: "View My Requests",
+      ctaUrl: `${appBaseUrl()}/leaves/my`,
+    });
+
     // Email assigned moderators
     await emailUsers({
       userIds: moderatorIds,
+      subject: `Leave Application Submitted #${leaveRequest.requestNumber}`,
+      heading: "Leave Application Submitted",
+      paragraphs: [
+        `${leaveRequest.personnel.fullName} (${leaveRequest.personnel.serviceId}) submitted leave request #${leaveRequest.requestNumber}.`,
+      ],
+      ctaLabel: "Review Application",
+      ctaUrl: `${appBaseUrl()}/leaves/${id}`,
+    });
+
+    // Email all active admins
+    await emailActiveAdmins({
       subject: `Leave Application Submitted #${leaveRequest.requestNumber}`,
       heading: "Leave Application Submitted",
       paragraphs: [

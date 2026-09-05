@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole, LeaveRequestStatus, NotificationType } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
-import { emailUsers, appBaseUrl } from "@/lib/email";
+import { emailUsers, emailActiveAdmins, appBaseUrl } from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
@@ -92,6 +92,17 @@ export async function POST(
     // Email assigned moderators
     await emailUsers({
       userIds: moderatorIds,
+      subject: `Corrected Leave Resubmitted #${leaveRequest.requestNumber}`,
+      heading: "Corrected Leave Resubmitted",
+      paragraphs: [
+        `${leaveRequest.personnel.fullName} resubmitted leave request #${leaveRequest.requestNumber} after corrections.`,
+      ],
+      ctaLabel: "Review Application",
+      ctaUrl: `${appBaseUrl()}/leaves/${id}`,
+    });
+
+    // Email all active admins
+    await emailActiveAdmins({
       subject: `Corrected Leave Resubmitted #${leaveRequest.requestNumber}`,
       heading: "Corrected Leave Resubmitted",
       paragraphs: [
