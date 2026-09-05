@@ -13,9 +13,9 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { fetchApi, apiPost, apiPatch, apiDelete } from "@/lib/api";
+import { fetchApi, apiPost, apiPatch, apiPut, apiDelete } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { Shield, Plus, Pencil, Trash2, Key } from "lucide-react";
+import { Plus, Trash2, Key, Ban, CheckCircle2 } from "lucide-react";
 
 interface UserRecord {
   id: string;
@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [form, setForm] = useState({ email: "", password: "", role: "USER" });
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [disableTarget, setDisableTarget] = useState<UserRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserRecord | null>(null);
   const [resetTarget, setResetTarget] = useState<UserRecord | null>(null);
   const [resetPassword, setResetPassword] = useState("");
@@ -85,9 +86,29 @@ export default function UsersPage() {
   };
 
   const handleDisable = async () => {
+    if (!disableTarget) return;
+    try {
+      await apiDelete(`/api/users/${disableTarget.id}`);
+      setDisableTarget(null);
+      fetchData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  };
+
+  const handleEnable = async (userId: string) => {
+    try {
+      await apiPut(`/api/users/${userId}`, { status: "ACTIVE" });
+      fetchData();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  };
+
+  const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      await apiDelete(`/api/users/${deleteTarget.id}`);
+      await apiDelete(`/api/users/${deleteTarget.id}/delete`);
       setDeleteTarget(null);
       fetchData();
     } catch (err: unknown) {
@@ -182,7 +203,16 @@ export default function UsersPage() {
                     <Button variant="ghost" size="icon" title="Reset Password" onClick={() => { setResetTarget(u); setResetPassword(""); }}>
                       <Key className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" title="Disable" onClick={() => setDeleteTarget(u)}>
+                    {u.status === "ACTIVE" ? (
+                      <Button variant="ghost" size="icon" title="Disable" onClick={() => setDisableTarget(u)}>
+                        <Ban className="w-3.5 h-3.5 text-amber-600" />
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="icon" title="Enable" onClick={() => handleEnable(u.id)}>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" title="Delete permanently" onClick={() => setDeleteTarget(u)}>
                       <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                     </Button>
                   </div>
@@ -232,12 +262,21 @@ export default function UsersPage() {
       </Modal>
 
       <ConfirmDialog
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        isOpen={!!disableTarget}
+        onClose={() => setDisableTarget(null)}
         onConfirm={handleDisable}
         title="Disable User"
-        description={`Disable account for "${deleteTarget?.email}"? They will no longer be able to log in.`}
+        description={`Disable account for "${disableTarget?.email}"? They will no longer be able to log in (their data is kept).`}
         confirmLabel="Disable"
+      />
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete User"
+        description={`Permanently delete "${deleteTarget?.email}"? This removes the account completely and cannot be undone. Users with leave/activity history cannot be deleted — disable those instead.`}
+        confirmLabel="Delete Permanently"
       />
     </DashboardLayout>
   );
