@@ -23,10 +23,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password } = result.data;
-
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    const cleanEmail = email.trim();
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: cleanEmail,
+          mode: "insensitive",
+        },
+      },
       include: {
         personnel: {
           include: {

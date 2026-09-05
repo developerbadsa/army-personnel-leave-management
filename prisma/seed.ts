@@ -2,10 +2,8 @@ import "dotenv/config";
 import { PrismaClient, UserRole, ApprovalAuthority, UserStatus } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import bcrypt from "bcryptjs";
-
-const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
+import bcrypt from "bcryptjs";  const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString, idleTimeoutMillis: 60_000, connectionTimeoutMillis: 10_000, keepAlive: true });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
@@ -141,12 +139,13 @@ async function main() {
   console.log(`✅ Seeded sample units & sections`);
 
   // 3. Create Default Super Admin User
-  const adminEmail = "Sowmentopu@gmail.com";
+  const adminEmail = "sowmentopu@gmail.com";
   const passwordHash = await bcrypt.hash("Admin@123456", 10);
 
   const adminUser = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
+      passwordHash,
       role: UserRole.ADMIN,
       approvalAuthority: ApprovalAuthority.NONE,
       status: UserStatus.ACTIVE,
