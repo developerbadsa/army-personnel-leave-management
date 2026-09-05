@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail, emailLayout, appBaseUrl } from "@/lib/email";
 import crypto from "crypto";
 import { z } from "zod";
 
@@ -51,10 +52,25 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // In production, send email with reset link containing rawToken
-    // For now, return success (token can be logged in dev)
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[DEV] Password reset token for ${email}: ${rawToken}`);
+    // Email the reset link (logs the link in dev when SMTP is not configured)
+    const resetUrl = `${appBaseUrl()}/reset-password?token=${rawToken}`;
+    const emailResult = await sendEmail({
+      to: user.email,
+      subject: "Password Reset Request",
+      html: emailLayout({
+        heading: "Reset your password",
+        paragraphs: [
+          "We received a request to reset the password for your account.",
+          "Click the button below to choose a new password. This link is valid for 1 hour.",
+          "If you did not request this, you can safely ignore this email.",
+        ],
+        ctaLabel: "Reset Password",
+        ctaUrl: resetUrl,
+      }),
+    });
+
+    if (emailResult.skipped && process.env.NODE_ENV === "development") {
+      console.log(`[mail:disabled] password reset link for ${email}: ${resetUrl}`);
     }
 
     return NextResponse.json({

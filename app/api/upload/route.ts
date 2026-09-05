@@ -4,14 +4,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
-const ALLOWED_MIME_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,16 +18,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 });
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { success: false, error: "Only PDF, JPG, and PNG files are allowed" },
-        { status: 400 }
-      );
-    }
-
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { success: false, error: "File size exceeds 5MB limit" },
+        { success: false, error: "File size exceeds 10MB limit" },
         { status: 400 }
       );
     }
@@ -42,19 +28,29 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    let fileUrl = "";
+
+    // 1. Attempt local disk storage (for self-hosted Node.js / VPS)
+    try {
+      const uploadsDir = join(process.cwd(), "public", "uploads");
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true });
+      }
+
+      const timestamp = Date.now();
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const uniqueFileName = `${timestamp}_${sanitizedName}`;
+      const filePath = join(uploadsDir, uniqueFileName);
+
+      await writeFile(filePath, buffer);
+      fileUrl = `/uploads/${uniqueFileName}`;
+    } catch (fsError) {
+      // 2. Fallback to Data URL for serverless / read-only filesystem (e.g. Vercel)
+      console.warn("Local disk write failed, fallback to Data URL:", fsError);
+      const mimeType = file.type || "application/octet-stream";
+      const base64Data = buffer.toString("base64");
+      fileUrl = `data:${mimeType};base64,${base64Data}`;
     }
-
-    const timestamp = Date.now();
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const uniqueFileName = `${timestamp}_${sanitizedName}`;
-    const filePath = join(uploadsDir, uniqueFileName);
-
-    await writeFile(filePath, buffer);
-
-    const fileUrl = `/uploads/${uniqueFileName}`;
 
     return NextResponse.json({
       success: true,
@@ -62,11 +58,12 @@ export async function POST(req: NextRequest) {
         fileUrl,
         fileName: file.name,
         fileSize: file.size,
-        mimeType: file.type,
+        mimeType: file.type || "application/octet-stream",
       },
     });
-  } catch (error) {
-    console.error("Upload Error:", error);
-    return NextResponse.json({ success: false, error: "Failed to upload file" }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("Upload API Error:", error);
+    const msg = error instanceof Error ? error.message : "Failed to upload file";
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

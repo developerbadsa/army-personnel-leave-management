@@ -14,7 +14,7 @@ import { fetchApi, apiPost } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import {
-  ArrowLeft, ThumbsUp, XCircle, RotateCcw, CheckCircle2, Clock, Award,
+  ArrowLeft, ThumbsUp, XCircle, RotateCcw, CheckCircle2, Clock, Award, FileText,
 } from "lucide-react";
 
 interface LeaveDetail {
@@ -43,6 +43,13 @@ interface LeaveDetail {
     user?: { id: string; email: string } | null;
   };
   leaveType: { name: string; code: string };
+  attachments?: Array<{
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    mimeType: string;
+    fileSize: number;
+  }>;
   reviews: Array<{
     id: string;
     decision: string;
@@ -173,6 +180,32 @@ export default function LeaveDetailPage() {
             <p className="text-xs text-slate-700 whitespace-pre-wrap">{leave.reason}</p>
           </CardContent>
         </Card>
+
+        {/* Attachments */}
+        {leave.attachments && leave.attachments.length > 0 && (
+          <Card>
+            <CardHeader className="p-4"><CardTitle className="text-sm">Attachments</CardTitle></CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {leave.attachments.map((att) => (
+                  <a
+                    key={att.id}
+                    href={att.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[4px] text-xs text-slate-700 transition"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="truncate font-medium">{att.fileName}</span>
+                    </div>
+                    <span className="text-[10px] text-blue-600 font-semibold shrink-0 ml-2">View / Open ↗</span>
+                  </a>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Approval Timeline */}
         <Card>

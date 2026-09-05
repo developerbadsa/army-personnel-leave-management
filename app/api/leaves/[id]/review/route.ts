@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
+import { emailUsers, appBaseUrl, decisionLabel } from "@/lib/email";
 import { z } from "zod";
 
 const reviewSchema = z.object({
@@ -155,6 +156,19 @@ export async function POST(
         entityType: "LeaveRequest",
         entityId: id,
       });
+
+      // Email the applicant
+      await emailUsers({
+        userIds: [leaveRequest.applicantId],
+        subject: `Leave Request #${leaveRequest.requestNumber} ${decisionLabel(decision)}`,
+        heading: `Leave request ${decisionLabel(decision).toLowerCase()}`,
+        paragraphs: [
+          `Your leave request #${leaveRequest.requestNumber} was reviewed with the decision: ${decisionLabel(decision)}.`,
+          remarks ? `Remarks from reviewer: ${remarks}` : "",
+        ].filter(Boolean),
+        ctaLabel: "View Request",
+        ctaUrl: `${appBaseUrl()}/leaves/${id}`,
+      });
     }
 
     // If Recommended, Notify Commander & Quarter Master
@@ -178,6 +192,18 @@ export async function POST(
           entityId: id,
         });
       }
+
+      // Email Commander & Quarter Master authorities
+      await emailUsers({
+        userIds: authorities.map((a) => a.id),
+        subject: `Leave Awaiting Final Approval #${leaveRequest.requestNumber}`,
+        heading: "Leave Awaiting Final Approval",
+        paragraphs: [
+          `Leave request #${leaveRequest.requestNumber} for ${leaveRequest.personnel.fullName} was recommended by the reviewer and is awaiting your final approval.`,
+        ],
+        ctaLabel: "Review & Approve",
+        ctaUrl: `${appBaseUrl()}/leaves/${id}`,
+      });
     }
 
     return NextResponse.json({

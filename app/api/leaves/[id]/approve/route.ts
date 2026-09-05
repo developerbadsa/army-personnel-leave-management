@@ -11,6 +11,7 @@ import {
 } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
+import { emailUsers, appBaseUrl, decisionLabel } from "@/lib/email";
 import { z } from "zod";
 
 const approvalSchema = z.object({
@@ -190,6 +191,19 @@ export async function POST(
         message: `Final approval decision: ${decision} by ${authorityUsed}. ${remarks ? `Remarks: ${remarks}` : ""}`,
         entityType: "LeaveRequest",
         entityId: id,
+      });
+
+      // Email the applicant
+      await emailUsers({
+        userIds: [leaveRequest.applicantId],
+        subject: `Leave Request #${leaveRequest.requestNumber} — ${decisionLabel(decision)}`,
+        heading: `Final decision: ${decisionLabel(decision)}`,
+        paragraphs: [
+          `Your leave request #${leaveRequest.requestNumber} received the final decision: ${decisionLabel(decision)} (${authorityUsed}).`,
+          remarks ? `Remarks: ${remarks}` : "",
+        ].filter(Boolean),
+        ctaLabel: "View Request",
+        ctaUrl: `${appBaseUrl()}/leaves/${id}`,
       });
     }
 

@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchApi, apiPost } from "@/lib/api";
+import { useAuth } from "@/features/auth/auth-provider";
 import { AlertCircle, CheckCircle2, Calculator, UploadCloud, FileCheck, X, Loader2 } from "lucide-react";
 
 interface LeaveType {
@@ -44,6 +45,7 @@ function calculateDays(start: string, end: string): number {
 
 export default function ApplyLeavePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
@@ -67,12 +69,30 @@ export default function ApplyLeavePage() {
 
   useEffect(() => {
     fetchApi<LeaveType[]>("/api/leaves/types").then((res) => {
-      if (res.success && res.data) setLeaveTypes(res.data);
+      if (res.success && res.data) {
+        const types = res.data;
+        setLeaveTypes(types);
+        if (types.length > 0) {
+          setForm((prev) => ({
+            ...prev,
+            leaveTypeId: prev.leaveTypeId || types[0].id,
+          }));
+        }
+      }
     });
     fetchApi<Personnel[]>("/api/personnel?limit=200").then((res) => {
       if (res.success && res.data) setPersonnel(res.data);
     });
   }, []);
+
+  useEffect(() => {
+    if (user?.personnel?.id) {
+      setForm((prev) => ({
+        ...prev,
+        personnelId: prev.personnelId || user.personnel!.id,
+      }));
+    }
+  }, [user]);
 
   const totalDays = calculateDays(form.startDate, form.endDate);
   const selectedType = leaveTypes.find((t) => t.id === form.leaveTypeId);

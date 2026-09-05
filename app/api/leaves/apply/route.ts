@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole, LeaveRequestStatus, NotificationType, Prisma } from "@prisma/client";
 import { createAuditLog } from "@/lib/audit";
 import { createNotification } from "@/lib/notifications";
+import { emailUsers, appBaseUrl } from "@/lib/email";
 import { z } from "zod";
 
 const applyLeaveSchema = z.object({
@@ -259,6 +260,8 @@ export async function POST(req: NextRequest) {
       select: { moderatorId: true },
     });
 
+    const moderatorIds = moderatorAssignments.map((m) => m.moderatorId);
+
     for (const m of moderatorAssignments) {
       await createNotification({
         recipientId: m.moderatorId,
@@ -270,6 +273,19 @@ export async function POST(req: NextRequest) {
         entityId: leaveRequest.id,
       });
     }
+
+    // Email assigned moderators
+    await emailUsers({
+      userIds: moderatorIds,
+      subject: `New Leave Application #${requestNumber}`,
+      heading: "New Leave Application",
+      paragraphs: [
+        `${personnel.fullName} (${personnel.serviceId}) submitted a leave application of ${totalDays} day(s).`,
+        `Request Number: ${requestNumber}`,
+      ],
+      ctaLabel: "Review Application",
+      ctaUrl: `${appBaseUrl()}/leaves/${leaveRequest.id}`,
+    });
 
     return NextResponse.json({ success: true, data: leaveRequest }, { status: 201 });
   } catch (error) {

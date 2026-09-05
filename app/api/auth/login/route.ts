@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const { email, password } = result.data;
+
     const cleanEmail = email.trim();
     const user = await prisma.user.findFirst({
       where: {
