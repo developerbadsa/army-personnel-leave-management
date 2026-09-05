@@ -24,6 +24,16 @@ export function hasRole(user: AuthenticatedUser, allowedRoles: UserRole[]): bool
   return allowedRoles.includes(user.role);
 }
 
+/**
+ * Super admin is a single account configured via SUPER_ADMIN_EMAIL in .env.
+ * It bypasses the usual deletion safeguards so it can remove any account.
+ */
+export function isSuperAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  const configured = process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase();
+  return Boolean(configured) && email.trim().toLowerCase() === configured;
+}
+
 export function hasApprovalAuthority(
   user: AuthenticatedUser,
   allowedAuthorities: ApprovalAuthority[]
