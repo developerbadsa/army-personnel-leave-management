@@ -62,8 +62,17 @@ export function Header() {
             onClick={() => setShowMenu(!showMenu)}
             className="flex items-center gap-2 px-2 py-1.5 rounded-[4px] hover:bg-slate-50 transition-colors cursor-pointer"
           >
-            <div className="w-7 h-7 rounded-[4px] bg-slate-200 flex items-center justify-center">
-              <User className="w-3.5 h-3.5 text-slate-600" />
+            <div className="w-7 h-7 rounded-[4px] bg-slate-200 flex items-center justify-center overflow-hidden border border-slate-300">
+              {user.personnel?.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.personnel.photoUrl}
+                  alt={user.personnel.fullName || "Avatar"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-3.5 h-3.5 text-slate-600" />
+              )}
             </div>
             <div className="hidden sm:flex flex-col items-start">
               <span className="text-xs font-medium text-slate-900 leading-tight">

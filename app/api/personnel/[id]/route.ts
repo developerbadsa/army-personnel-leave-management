@@ -11,6 +11,7 @@ const updatePersonnelSchema = z.object({
   phone: z.string().optional().nullable(),
   email: z.string().email().optional().nullable(),
   bloodGroup: z.string().optional().nullable(),
+  photoUrl: z.string().optional().nullable(),
   joiningDate: z.string().optional().nullable(),
   postingDate: z.string().optional().nullable(),
   currentPosting: z.string().optional().nullable(),

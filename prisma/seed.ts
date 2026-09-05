@@ -141,7 +141,7 @@ async function main() {
   console.log(`✅ Seeded sample units & sections`);
 
   // 3. Create Default Super Admin User
-  const adminEmail = "admin@army.local";
+  const adminEmail = "Sowmentopu@gmail.com";
   const passwordHash = await bcrypt.hash("Admin@123456", 10);
 
   const adminUser = await prisma.user.upsert({
@@ -166,17 +166,20 @@ async function main() {
       where: { serviceId: "ADMIN-001" },
       update: {
         userId: adminUser.id,
-        fullName: "System Administrator",
+        fullName: "Topu",
         rank: "Major",
         unitId: hqUnit.id,
+        email: adminEmail,
+        photoUrl: "/uploads/topu-avatar.jpg",
       },
       create: {
         userId: adminUser.id,
         serviceId: "ADMIN-001",
-        fullName: "System Administrator",
+        fullName: "Topu",
         rank: "Major",
         email: adminEmail,
         unitId: hqUnit.id,
+        photoUrl: "/uploads/topu-avatar.jpg",
       },
     });
   }

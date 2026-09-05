@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
+import { useAuth } from "@/features/auth/auth-provider";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageLoader } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
   FileText,
   Mail,
   Phone,
+  Pencil,
   CalendarDays,
   MapPin,
   Droplets,
@@ -83,6 +85,7 @@ const toNum = (v: string | number | undefined | null): number => Number(v ?? 0);
 export default function PersonnelDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [personnel, setPersonnel] = useState<PersonnelProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -150,6 +153,14 @@ export default function PersonnelDetailPage() {
               {personnel.fullName} · {personnel.serviceId}
             </p>
           </div>
+          {user?.role === "ADMIN" && (
+            <Link href={`/personnel/${personnel.id}/edit`}>
+              <Button size="sm" variant="outline">
+                <Pencil className="w-3.5 h-3.5 mr-1" />
+                Edit Profile
+              </Button>
+            </Link>
+          )}
           <Link href={`/reports/individual/${personnel.id}`}>
             <Button size="sm" variant="outline">
               <FileText className="w-3.5 h-3.5 mr-1" />

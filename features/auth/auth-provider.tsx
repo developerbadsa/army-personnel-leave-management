@@ -9,6 +9,9 @@ interface Personnel {
   serviceId: string;
   fullName: string;
   rank: string;
+  photoUrl?: string | null;
+  phone?: string | null;
+  bloodGroup?: string | null;
   unitId: string;
   sectionId?: string | null;
   unit?: { id: string; name: string; code: string };
