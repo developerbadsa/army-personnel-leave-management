@@ -4,13 +4,14 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/features/auth/auth-provider";
 import { fetchApi } from "@/lib/api";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { Bell, LogOut, User, ChevronDown, ShieldCheck, UserCheck } from "lucide-react";
+import { GlobalSearch } from "@/components/search/global-search";
+import { Bell, LogOut, User, ChevronDown, Search } from "lucide-react";
 
 export function Header() {
   const { user, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -34,6 +35,18 @@ export function Header() {
     };
   }, [user?.id]);
 
+  // Open global search with Ctrl/Cmd + K
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (!user) return null;
 
   const displayName = user.personnel?.fullName || user.email.split("@")[0];
@@ -46,6 +59,19 @@ export function Header() {
 
       {/* Right */}
       <div className="flex items-center gap-3.5 ml-auto">
+        {/* Global Search */}
+        <button
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search (Ctrl+K)"
+          className="flex items-center gap-2 rounded-lg border border-slate-200/80 bg-slate-50/50 px-2.5 h-9 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+        >
+          <Search className="w-4 h-4" />
+          <span className="hidden lg:inline text-xs font-medium">Search…</span>
+          <kbd className="hidden lg:inline-flex text-[9px] font-semibold text-slate-400 border border-slate-200 rounded px-1 py-0.5">
+            Ctrl K
+          </kbd>
+        </button>
+
         {/* Notifications */}
         <Link
           href="/notifications"
@@ -138,6 +164,9 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Global Search Popup */}
+      {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
     </header>
   );
 }
