@@ -136,7 +136,7 @@ export default function LeaveDetailPage() {
               <StatusBadge status={leave.status} />
             </div>
             <p className="text-xs text-slate-500">
-              {leave.personnel.rank} {leave.personnel.fullName} ({leave.personnel.serviceId})
+              {leave.personnel.fullName} ({leave.personnel.serviceId})
             </p>
           </div>
         </div>

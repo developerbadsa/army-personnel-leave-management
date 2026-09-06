@@ -43,7 +43,7 @@ export default function OverdueReportPage() {
           <TableBody>
             {records.map((r) => (
               <TableRow key={r.id}>
-                <TableCell><p className="text-xs font-medium">{r.personnel.fullName}</p><p className="text-[10px] text-slate-500">{r.personnel.rank} · {r.personnel.serviceId}</p></TableCell>
+                <TableCell><p className="text-xs font-medium">{r.personnel.fullName}</p><p className="text-[10px] text-slate-500">{r.personnel.serviceId}</p></TableCell>
                 <TableCell className="text-xs">{r.personnel.unit.name}</TableCell>
                 <TableCell className="font-mono text-xs">{r.leaveRequest.requestNumber}</TableCell>
                 <TableCell className="text-xs">{formatDate(r.expectedReturnDate)}</TableCell>

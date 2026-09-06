@@ -145,7 +145,7 @@ export default function LeavesPage() {
                   <TableCell>
                     <div>
                       <p className="text-xs font-medium">{l.personnel.fullName}</p>
-                      <p className="text-[10px] text-slate-500">{l.personnel.rank} · {l.personnel.serviceId}</p>
+                      <p className="text-[10px] text-slate-500">{l.personnel.serviceId}</p>
                     </div>
                   </TableCell>
                   <TableCell className="text-xs">{l.leaveType.name}</TableCell>

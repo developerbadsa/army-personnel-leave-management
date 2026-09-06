@@ -39,7 +39,6 @@ export async function GET(req: NextRequest) {
           personnel: {
             select: {
               fullName: true,
-              rank: true,
               unit: { select: { name: true } },
             },
           },
@@ -59,7 +58,7 @@ export async function GET(req: NextRequest) {
       ...leaves.map((l) => ({
         id: `leave-${l.id}`,
         type: "LEAVE",
-        title: `${l.personnel.rank} ${l.personnel.fullName} (${l.leaveType.name})`,
+        title: `${l.personnel.fullName} (${l.leaveType.name})`,
         start: l.startDate,
         end: l.endDate,
         allDay: true,

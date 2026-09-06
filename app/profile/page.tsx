@@ -189,7 +189,6 @@ export default function ProfilePage() {
 
               <div>
                 <h2 className="text-base font-bold text-slate-900">{currentName}</h2>
-                <p className="text-xs text-slate-500 font-medium">{user.personnel?.rank || "Officer"}</p>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <StatusBadge status={user.role} className="text-[10px]" />
                   {user.approvalAuthority !== "NONE" && (
@@ -278,10 +277,6 @@ export default function ProfilePage() {
               <div>
                 <span className="text-slate-500">Service ID:</span>{" "}
                 <span className="font-mono font-bold text-slate-800">{user.personnel.serviceId}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">Rank:</span>{" "}
-                <span className="font-semibold text-slate-800">{user.personnel.rank}</span>
               </div>
               {user.personnel.unit && (
                 <div className="flex items-center gap-1.5">

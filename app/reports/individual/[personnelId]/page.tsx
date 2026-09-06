@@ -17,7 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { fetchApi } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getInitials } from "@/lib/utils";
 import { Printer, Download, User, ArrowLeft, Shield } from "lucide-react";
 import Link from "next/link";
 import jsPDF from "jspdf";
@@ -97,7 +97,7 @@ export default function IndividualReportDetailPage({
     // Personnel Info Box
     doc.setFontSize(11);
     doc.setTextColor(0);
-    doc.text(`Name: ${data.personnel.fullName} (${data.personnel.rank})`, 14, 35);
+    doc.text(`Name: ${data.personnel.fullName}`, 14, 35);
     doc.text(`Service ID: ${data.personnel.serviceId}`, 14, 42);
     doc.text(`Unit: ${data.personnel.unit.name} (${data.personnel.unit.code})`, 120, 35);
     doc.text(`Year: ${data.year}`, 120, 42);
@@ -185,12 +185,12 @@ export default function IndividualReportDetailPage({
             <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-slate-900 text-white rounded-[4px] flex items-center justify-center font-bold text-base">
-                  {data.personnel.rank.slice(0, 2).toUpperCase()}
+                  {getInitials(data.personnel.fullName)}
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900">{data.personnel.fullName}</h2>
                   <p className="text-xs text-slate-500 font-medium">
-                    {data.personnel.rank} · ID: {data.personnel.serviceId}
+                    ID: {data.personnel.serviceId}
                   </p>
                   <p className="text-[11px] text-slate-400">
                     Unit: {data.personnel.unit.name} ({data.personnel.unit.code})

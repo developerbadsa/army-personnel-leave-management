@@ -46,13 +46,12 @@ export default function PersonnelReportPage() {
 
       {loading ? <PageLoader /> : (
         <Table>
-          <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Name</TableHead><TableHead>Rank</TableHead><TableHead>Unit</TableHead><TableHead>Section</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Name</TableHead><TableHead>Unit</TableHead><TableHead>Section</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
           <TableBody>
             {records.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-mono text-xs">{r.serviceId}</TableCell>
                 <TableCell className="text-xs font-medium">{r.fullName}</TableCell>
-                <TableCell className="text-xs">{r.rank}</TableCell>
                 <TableCell className="text-xs">{r.unit.name}</TableCell>
                 <TableCell className="text-xs">{r.section?.name || "—"}</TableCell>
                 <TableCell><StatusBadge status={r.status} className="text-[9px]" /></TableCell>

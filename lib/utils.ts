@@ -14,6 +14,18 @@ export function formatDate(date: string | Date | null | undefined): string {
   }).format(new Date(date));
 }
 
+export function getInitials(name: string): string {
+  return (
+    name
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "?"
+  );
+}
+
 export function formatDateTime(date: string | Date | null | undefined): string {
   if (!date) return "—";
   return new Intl.DateTimeFormat("en-GB", {

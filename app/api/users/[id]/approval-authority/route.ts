@@ -51,7 +51,7 @@ export async function PATCH(
 
       if (existing) {
         const personnelName = existing.personnel
-          ? `${existing.personnel.rank} ${existing.personnel.fullName}`
+          ? existing.personnel.fullName
           : existing.email;
         return NextResponse.json(
           {

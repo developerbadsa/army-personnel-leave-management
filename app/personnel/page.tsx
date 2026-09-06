@@ -85,7 +85,7 @@ export default function PersonnelPage() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <Input
-            placeholder="Search by name, ID, rank..."
+            placeholder="Search by name, ID..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -127,7 +127,7 @@ export default function PersonnelPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Service ID</TableHead>
-                <TableHead>Name / Rank</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Unit</TableHead>
                 <TableHead>Section</TableHead>
                 <TableHead>Status</TableHead>
@@ -146,10 +146,7 @@ export default function PersonnelPage() {
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <div>
-                      <p className="text-xs font-medium text-slate-900">{p.fullName}</p>
-                      <p className="text-[10px] text-slate-500">{p.rank}</p>
-                    </div>
+                    <p className="text-xs font-medium text-slate-900">{p.fullName}</p>
                   </TableCell>
                   <TableCell className="text-xs">{p.unit.name}</TableCell>
                   <TableCell className="text-xs">{p.section?.name || "—"}</TableCell>

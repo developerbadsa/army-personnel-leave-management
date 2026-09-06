@@ -162,7 +162,7 @@ export default function UsersPage() {
                   {u.personnel ? (
                     <div>
                       <p className="text-xs font-medium">{u.personnel.fullName}</p>
-                      <p className="text-[10px] text-slate-500">{u.personnel.rank} · {u.personnel.serviceId}</p>
+                      <p className="text-[10px] text-slate-500">{u.personnel.serviceId}</p>
                     </div>
                   ) : (
                     <span className="text-[10px] text-slate-400">No personnel</span>

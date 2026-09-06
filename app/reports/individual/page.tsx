@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchApi } from "@/lib/api";
+import { getInitials } from "@/lib/utils";
 import { User, Search, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -35,7 +36,6 @@ export default function IndividualReportDirectoryPage() {
     (p) =>
       p.fullName.toLowerCase().includes(search.toLowerCase()) ||
       p.serviceId.toLowerCase().includes(search.toLowerCase()) ||
-      p.rank.toLowerCase().includes(search.toLowerCase()) ||
       p.unit.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -50,7 +50,7 @@ export default function IndividualReportDirectoryPage() {
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <Input
-            placeholder="Search by name, service ID, rank, or unit..."
+            placeholder="Search by name, service ID, or unit..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -69,12 +69,12 @@ export default function IndividualReportDirectoryPage() {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 bg-slate-900 text-white rounded-[4px] flex items-center justify-center font-bold text-xs">
-                        {p.rank.slice(0, 2).toUpperCase()}
+                        {getInitials(p.fullName)}
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-900">{p.fullName}</p>
                         <p className="text-[11px] text-slate-500">
-                          {p.rank} · {p.serviceId}
+                          {p.serviceId}
                         </p>
                         <p className="text-[10px] text-slate-400">
                           {p.unit.name} {p.section ? `(${p.section.name})` : ""}

@@ -58,7 +58,7 @@ export default function AssignedPersonnelPage() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Name / Rank</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Unit</TableHead>
               <TableHead>Section</TableHead>
               <TableHead>Status</TableHead>
@@ -68,7 +68,7 @@ export default function AssignedPersonnelPage() {
             {personnel.map((p) => (
               <TableRow key={p.id}>
                 <TableCell><Link href={`/personnel/${p.id}`} className="font-mono text-xs hover:text-blue-600">{p.serviceId}</Link></TableCell>
-                <TableCell><p className="text-xs font-medium">{p.fullName}</p><p className="text-[10px] text-slate-500">{p.rank}</p></TableCell>
+                <TableCell><p className="text-xs font-medium">{p.fullName}</p></TableCell>
                 <TableCell className="text-xs">{p.unit.name}</TableCell>
                 <TableCell className="text-xs">{p.section?.name || "—"}</TableCell>
                 <TableCell><StatusBadge status={p.status} className="text-[9px]" /></TableCell>

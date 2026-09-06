@@ -125,7 +125,7 @@ export default function LeaveReportPage() {
                 <TableCell className="font-mono text-xs">{r.requestNumber}</TableCell>
                 <TableCell>
                   <p className="text-xs font-medium">{r.personnel.fullName}</p>
-                  <p className="text-[10px] text-slate-500">{r.personnel.rank}</p>
+                  <p className="text-[10px] text-slate-500">{r.personnel.serviceId}</p>
                 </TableCell>
                 <TableCell className="text-xs">{r.personnel.unit.name}</TableCell>
                 <TableCell className="text-xs">{r.leaveType.name}</TableCell>

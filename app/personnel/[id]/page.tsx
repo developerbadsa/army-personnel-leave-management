@@ -18,7 +18,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { fetchApi } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getInitials } from "@/lib/utils";
 import {
   ArrowLeft,
   ArrowRight,
@@ -182,13 +182,13 @@ export default function PersonnelDetailPage() {
                 />
               ) : (
                 <div className="w-12 h-12 bg-slate-900 text-white rounded-[4px] flex items-center justify-center font-bold text-base shrink-0">
-                  {personnel.rank.slice(0, 2).toUpperCase()}
+                  {getInitials(personnel.fullName)}
                 </div>
               )}
               <div>
                 <h2 className="text-base font-bold text-slate-900">{personnel.fullName}</h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  {personnel.rank} · ID: {personnel.serviceId}
+                  ID: {personnel.serviceId}
                 </p>
                 <p className="text-[11px] text-slate-400">
                   Unit: {personnel.unit.name} ({personnel.unit.code})
