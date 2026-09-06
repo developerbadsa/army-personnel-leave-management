@@ -114,9 +114,8 @@ function generateManual() {
   // ==================== SECTION 3: LEAVE APPLICATION WORKFLOW ====================
   yPos = addSectionHeader("3. LEAVE APPLICATION PROCEDURE (USER GUIDE)", yPos);
 
-  const applySteps = [
-    "Step 1 - Navigation: Click 'Leave' -> 'Apply Leave' on the sidebar navigation menu.",
-    "Step 2 - Category Selection: Select appropriate leave type (Annual, Casual, Medical, Earned, Emergency).",
+  const applySteps = [    "Step 1 - Navigation: Click 'Leave' -> 'Apply Leave' on the sidebar navigation menu.",
+    "Step 2 - Category Selection: Select appropriate leave type (Annual, Casual, Medical, Earned, Special, Emergency).",
     "Step 3 - Date Selection: Choose 'Start Date' and 'End Date'. Total duration calculates automatically.",
     "Step 4 - Statement of Reason: Enter clear, concise justification for absence.",
     "Step 5 - Emergency Details: Provide active contact telephone and whereabouts during the leave period.",
@@ -220,7 +219,7 @@ function generateManual() {
 
   const profileItems = [
     "• Profile Overview: Access 'My Profile' from the top-right account menu to view official service records.",
-    "• Updating Details: Click 'Edit Profile' to modify contact number, blood group, or address details.",
+    "• Updating Details: Click 'Edit Profile' to modify full name, contact number, blood group, or profile photograph.",
     "• Profile Photograph: Click the camera icon over your avatar to upload a professional service photo.",
     "• Password Security: Maintain credential confidentiality; notify system administrators immediately if compromised.",
   ];
