@@ -12,9 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { fetchApi, apiPost } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import Link from "next/link";
 import {
-  ArrowLeft, ThumbsUp, XCircle, RotateCcw, CheckCircle2, Clock, Award, FileText,
+  ArrowLeft, ThumbsUp, XCircle, RotateCcw, CheckCircle2, Clock, Award, FileText, Eye,
 } from "lucide-react";
 
 interface LeaveDetail {
@@ -83,6 +84,7 @@ export default function LeaveDetailPage() {
   const [decision, setDecision] = useState("");
   const [remarks, setRemarks] = useState("");
   const [acting, setActing] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const fetchLeave = useCallback(async () => {
     try {
@@ -116,6 +118,8 @@ export default function LeaveDetailPage() {
 
   if (loading) return <DashboardLayout><PageLoader /></DashboardLayout>;
   if (!leave) return <DashboardLayout><p className="text-sm text-slate-500">Leave request not found</p></DashboardLayout>;
+
+  const imageAttachments = (leave.attachments ?? []).filter((a) => isImageAttachment(a));
 
   const canReview = user?.role === "ADMIN" || user?.role === "MODERATOR";
   const canApprove = user?.approvalAuthority === "COMMANDER" || user?.approvalAuthority === "QUARTER_MASTER" || user?.role === "ADMIN";
@@ -187,21 +191,51 @@ export default function LeaveDetailPage() {
             <CardHeader className="p-4"><CardTitle className="text-sm">Attachments</CardTitle></CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {leave.attachments.map((att) => (
-                  <a
-                    key={att.id}
-                    href={att.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[4px] text-xs text-slate-700 transition"
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="truncate font-medium">{att.fileName}</span>
-                    </div>
-                    <span className="text-[10px] text-blue-600 font-semibold shrink-0 ml-2">View / Open ↗</span>
-                  </a>
-                ))}
+                {leave.attachments.map((att) => {
+                  const isImage = isImageAttachment(att);
+                  if (!isImage) {
+                    return (
+                      <a
+                        key={att.id}
+                        href={att.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[4px] text-xs text-slate-700 transition"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                          <span className="truncate font-medium">{att.fileName}</span>
+                        </div>
+                        <span className="text-[10px] text-blue-600 font-semibold shrink-0 ml-2">View / Open ↗</span>
+                      </a>
+                    );
+                  }
+                  const idx = imageAttachments.findIndex((a) => a.id === att.id);
+                  return (
+                    <button
+                      key={att.id}
+                      type="button"
+                      onClick={() => setLightboxIndex(idx)}
+                      className="flex items-center justify-between gap-2 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-[4px] text-xs text-slate-700 transition cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-2.5 truncate">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={att.fileUrl}
+                          alt={att.fileName}
+                          className="w-10 h-10 rounded-[4px] object-cover bg-slate-200 border border-slate-200 shrink-0"
+                        />
+                        <div className="truncate">
+                          <p className="truncate font-medium">{att.fileName}</p>
+                          <p className="text-[9px] text-slate-400">Click image to preview</p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-blue-600 font-semibold shrink-0 ml-2">
+                        <Eye className="w-3 h-3" /> Preview
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -292,6 +326,19 @@ export default function LeaveDetailPage() {
         )}
       </div>
 
+      {/* Image Preview Lightbox */}
+      {lightboxIndex !== null && imageAttachments.length > 0 && (
+        <ImageLightbox
+          images={imageAttachments.map((a) => ({
+            url: a.fileUrl,
+            name: a.fileName,
+            caption: `${leave.personnel.fullName} · ${leave.requestNumber}`,
+          }))}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+
       {/* Action Modal */}
       <Modal
         isOpen={!!actionModal}
@@ -320,6 +367,13 @@ export default function LeaveDetailPage() {
         </div>
       </Modal>
     </DashboardLayout>
+  );
+}
+
+function isImageAttachment(att: { mimeType: string; fileName: string }): boolean {
+  return (
+    (att.mimeType || "").startsWith("image/") ||
+    /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(att.fileName || "")
   );
 }
 
