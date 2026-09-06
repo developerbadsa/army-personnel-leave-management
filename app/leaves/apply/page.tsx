@@ -49,6 +49,7 @@ export default function ApplyLeavePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [personnelLoaded, setPersonnelLoaded] = useState(false);
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -80,9 +81,11 @@ export default function ApplyLeavePage() {
         }
       }
     });
-    fetchApi<Personnel[]>("/api/personnel?limit=200").then((res) => {
-      if (res.success && res.data) setPersonnel(res.data);
-    });
+    fetchApi<Personnel[]>("/api/personnel?limit=200")
+      .then((res) => {
+        if (res.success && res.data) setPersonnel(res.data);
+      })
+      .finally(() => setPersonnelLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -192,6 +195,13 @@ export default function ApplyLeavePage() {
                     }))}
                     placeholder="Select personnel"
                   />
+                  {personnelLoaded && personnel.length === 0 && (
+                    <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded-[4px] p-2 mt-1">
+                      {user?.role === "USER"
+                        ? "Your account has no linked personnel record, so no one can be selected here. Contact an administrator to link your personnel record to your account before applying."
+                        : "No personnel records are available in your scope to apply for. Contact an administrator."}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-slate-700">Leave Type *</label>
